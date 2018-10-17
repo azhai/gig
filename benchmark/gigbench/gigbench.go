@@ -88,11 +88,3 @@ func testSet() {
 	fmt.Printf("The 100 Gets took %v to run.\n", t12.Sub(t11))
 	gig.CloseAll()
 }
-
-//macbook 2017 gig vs bolt
-//The 100 Set took 19.440075ms to run./19.272079ms
-//The 100 Get took 671.343µs to run./211.878µs
-//The 100 Sets took 1.139579ms to run./?
-//The 100 Keys took 36.214µs to run./?
-//The second 100 Keys took 5.632µs to run./?
-//The 100 Gets took 206.775µs to run./?
