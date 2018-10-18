@@ -49,6 +49,7 @@ func TestReadJT808(t *testing.T) {
 	}
 	for _, payload := range chunks {
 		t.Log(payload)
+		pkt.SetPayload(payload, false)
 		mobile := pkt.GetByName("mobile")
 		t.Log(helpers.Bin2Hex(mobile))
 	}

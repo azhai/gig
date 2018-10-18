@@ -56,7 +56,6 @@ func (obj *Packet) GetFilter() matcher.FilterFunc {
 		if obj.Check != nil && !obj.Check(chunk) {
 			return nil
 		}
-		obj.SetPayload(chunk, false)
 		return chunk
 	}
 	return obj.filter
