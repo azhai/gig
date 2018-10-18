@@ -26,12 +26,12 @@ func (obj *Packet) SetPayload(payload []byte, isEscaped bool) {
 	obj.payload = payload
 }
 
-func (obj *Packet) Serialize() []byte {
+func (obj *Packet) Serialize(needEscaped bool) []byte {
 	payload := obj.payload
 	if payload == nil {
 		return nil
 	}
-	if obj.Escape != nil {
+	if needEscaped && obj.Escape != nil {
 		payload = obj.Escape(payload)
 	}
 	return payload
