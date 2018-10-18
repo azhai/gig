@@ -16,13 +16,13 @@ const (
 )
 
 func CreateJt808() *Packet {
-	parser := NewNamedTuple()
-	parser.AddFixeds(2, "cmd", "props")
-	parser.AddFixeds(6, "mobile")
-	parser.AddFixeds(2, "msgno")
-	parser.AddFixeds(-1, "check")
+	tuple := NewNamedTuple()
+	tuple.AddFixeds(2, "cmd", "props")
+	tuple.AddFixeds(6, "mobile")
+	tuple.AddFixeds(2, "msgno")
+	tuple.AddFixeds(-1, "check")
 
-	pkt := NewPacket(parser)
+	pkt := NewPacket(tuple)
 	pkt.Escape = func(data []byte) []byte {
 		data = bytes.Replace(data, []byte{0x7d}, []byte{0x7d, 0x01}, -1)
 		return bytes.Replace(data, []byte{0x7e}, []byte{0x7d, 0x02}, -1)

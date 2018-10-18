@@ -8,15 +8,15 @@ import (
 //字节包
 type Packet struct {
 	payload  []byte
-	parser   *NamedTuple
+	tuple    *NamedTuple
 	filter   matcher.FilterFunc
 	Escape   func([]byte) []byte
 	Unescape func([]byte) []byte
 	Check    func([]byte) bool
 }
 
-func NewPacket(parser *NamedTuple) *Packet {
-	return &Packet{parser: parser}
+func NewPacket(tuple *NamedTuple) *Packet {
+	return &Packet{tuple: tuple}
 }
 
 func (obj *Packet) SetPayload(payload []byte, isEscaped bool) {
@@ -43,8 +43,8 @@ func (obj *Packet) GetFilter() matcher.FilterFunc {
 		return obj.filter
 	}
 	var least = 1
-	if obj.parser != nil {
-		least = obj.parser.Slicer.GetLeastSize()
+	if obj.tuple != nil {
+		least = obj.tuple.Slicer.GetLeastSize()
 	}
 	obj.filter = func(chunk []byte) []byte {
 		if len(chunk) < least {
@@ -63,19 +63,19 @@ func (obj *Packet) GetFilter() matcher.FilterFunc {
 
 func (obj *Packet) GetRange(name string) (int, int) {
 	var length = len(obj.payload)
-	if length == 0 || obj.parser == nil {
+	if length == 0 || obj.tuple == nil {
 		return 0, 0
 	}
 	var field *Field
 	if name == "" || name == "<REST>" {
-		field = obj.parser.GetRest()
+		field = obj.tuple.GetRest()
 	} else {
-		field = obj.parser.GetField(name)
+		field = obj.tuple.GetField(name)
 	}
 	if field == nil {
 		return 0, 0
 	}
-	return obj.parser.GetRealRange(field, length)
+	return obj.tuple.GetRealRange(field, length)
 }
 
 func (obj *Packet) GetByName(name string) []byte {
