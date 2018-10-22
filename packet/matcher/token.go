@@ -94,16 +94,19 @@ func (obj *TokenMatcher) CreateSplitAhead() SplitAheadFunc {
 }
 
 //解析字节流
-func (obj *TokenMatcher) SplitStream(reader io.Reader, filter FilterFunc) ([][]byte, error) {
-	var output [][]byte
-	//defer close(output)
+func (obj *TokenMatcher) SplitStream(
+	reader io.Reader, filter FilterFunc) (<-chan []byte, error) {
+	var output = make(chan []byte)
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(obj.Spliter)
-	for scanner.Scan() {
-		chunk := filter(scanner.Bytes())
-		if chunk != nil {
-			output = append(output, chunk)
+	go func(s *bufio.Scanner) {
+		for s.Scan() {
+			chunk := filter(s.Bytes())
+			if chunk != nil {
+				output <- chunk
+			}
 		}
-	}
+		close(output)
+	}(scanner)
 	return output, scanner.Err()
 }

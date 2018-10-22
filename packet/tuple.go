@@ -85,6 +85,11 @@ func (obj *NamedTuple) GetRest() *Field {
 	return obj.Slicer.Rest
 }
 
+func (obj *NamedTuple) HasField(name string) bool {
+	_, ok := obj.Locates[name]
+	return ok
+}
+
 func (obj *NamedTuple) GetField(name string) *Field {
 	if index, ok := obj.Locates[name]; ok {
 		return obj.Slicer.GetFieldByIndex(index)
@@ -92,10 +97,20 @@ func (obj *NamedTuple) GetField(name string) *Field {
 	return nil
 }
 
-func (obj *NamedTuple) GetRealRange(field *Field, length int) (int, int) {
+func (obj *NamedTuple) GetRange(field *Field, total int) (int, int) {
 	if field.Optional && obj.ExecCondition(field.Index) == 0 {
 		return 0, 0 //非固定字段有定义，但没有数据
 	}
 	offset := obj.CalcOptionalOffset(field)
-	return obj.Slicer.GetFieldRange(field, length, offset)
+	start, stop := obj.Slicer.GetStartStop(field, offset)
+	if total > 0 {
+		//负数转为正向，Go的slice索引不支持负数
+		if start < 0 {
+			start += total
+		}
+		if stop < 0 {
+			stop += total
+		}
+	}
+	return start, stop
 }

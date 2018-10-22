@@ -47,7 +47,7 @@ func TestReadJT808(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	for _, payload := range chunks {
+	for payload := range chunks {
 		t.Log(payload)
 		pkt.SetPayload(payload, false)
 		mobile := pkt.GetByName("mobile")

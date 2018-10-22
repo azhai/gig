@@ -44,7 +44,7 @@ func (obj *Packet) GetFilter() matcher.FilterFunc {
 	}
 	var least = 1
 	if obj.tuple != nil {
-		least = obj.tuple.Slicer.GetLeastSize()
+		_, least = obj.tuple.Slicer.GetLeastSize()
 	}
 	obj.filter = func(chunk []byte) []byte {
 		if len(chunk) < least {
@@ -61,40 +61,63 @@ func (obj *Packet) GetFilter() matcher.FilterFunc {
 	return obj.filter
 }
 
-func (obj *Packet) GetRange(name string) (int, int) {
-	var length = len(obj.payload)
-	if length == 0 || obj.tuple == nil {
-		return 0, 0
+func (obj *Packet) GetRest() []byte {
+	if obj.tuple == nil {
+		return nil
 	}
-	var field *Field
-	if name == "" || name == "<REST>" {
-		field = obj.tuple.GetRest()
-	} else {
-		field = obj.tuple.GetField(name)
-	}
-	if field == nil {
-		return 0, 0
-	}
-	return obj.tuple.GetRealRange(field, length)
+	field := obj.tuple.GetRest()
+	return obj.GetByField(field)
 }
 
-func (obj *Packet) GetByName(name string) []byte {
-	start, stop := obj.GetRange(name)
-	if start < stop {
+func (obj *Packet) GetByField(field *Field) []byte {
+	var total = len(obj.payload)
+	if total == 0 {
+		return nil
+	}
+	start, stop := obj.tuple.GetRange(field, total)
+	if 0 <= start && start < stop && stop <= total {
 		return obj.payload[start:stop]
 	}
 	return nil
 }
 
-func (obj *Packet) SetByName(name string, chunk, pads []byte) int {
-	start, stop := obj.GetRange(name)
+func (obj *Packet) GetByName(name string) []byte {
+	if obj.tuple == nil {
+		return nil
+	}
+	field := obj.tuple.GetField(name)
+	if field == nil {
+		return nil
+	}
+	return obj.GetByField(field)
+}
+
+func (obj *Packet) FillField(name string, chunk, pads []byte, total int) (int, int, []byte) {
+	field := obj.tuple.GetField(name)
+	if field == nil {
+		return 0, 0, nil
+	}
+	start, stop := obj.tuple.GetRange(field, total)
+	if start < 0 || stop > total {
+		return 0, 0, nil
+	}
 	rangeSize := stop - start
 	padSize := rangeSize - len(chunk)
 	if rangeSize <= 0 || padSize < 0 {
-		return 0
+		return 0, 0, nil
 	}
 	if padSize > 0 && pads != nil {
 		chunk = helpers.Extend(chunk, pads, padSize)
 	}
+	return start, stop, chunk
+}
+
+func (obj *Packet) SetByName(name string, chunk, pads []byte) int {
+	if obj.tuple == nil {
+		return 0
+	}
+	var start, stop int
+	var total = len(obj.payload)
+	start, stop, chunk = obj.FillField(name, chunk, pads, total)
 	return copy(obj.payload[start:stop], chunk)
 }

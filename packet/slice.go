@@ -34,17 +34,19 @@ func NewFieldSlice() *FieldSlice {
 	return &FieldSlice{Rest: rest}
 }
 
-func (obj *FieldSlice) GetLeastSize() int {
-	least := 0
+func (obj *FieldSlice) GetLeastSize() (int, int) {
+	var num, least = 0, 0
 	for _, f := range obj.Sequence {
+		num++
 		least += f.Size
 	}
 	if len(obj.Reverse) > 0 {
 		for _, f := range obj.Reverse {
+			num++
 			least += f.Size
 		}
 	}
-	return least
+	return num, least
 }
 
 //添加开头的段定义
@@ -76,27 +78,6 @@ func (obj *FieldSlice) AddRevField(field *Field) *Field {
 	return field
 }
 
-//找出段的正向起止位置，offset为修正值，只对同符号数据起作用
-func (obj *FieldSlice) GetFieldRange(field *Field, length, offset int) (int, int) {
-	var (
-		start = field.Start
-		stop  = field.Stop
-	)
-	if start*offset > 0 { //皆为正或皆为负，加上修正值
-		start += offset
-	}
-	if start < 0 { //负数转为正向，Go的slice索引不支持负数
-		start += length
-	}
-	if stop*offset >= 0 { //同符号时修正
-		stop += offset
-	}
-	if stop <= 0 { //负数转为正向
-		stop += length
-	}
-	return start, stop
-}
-
 //根据段索引找出段的定义
 func (obj *FieldSlice) GetFieldByIndex(index int) *Field {
 	var (
@@ -126,16 +107,27 @@ func (obj *FieldSlice) GetFieldByIndex(index int) *Field {
 	}
 }
 
+//找出段的正向起止位置，offset为修正值，只对同符号数据起作用
+func (obj *FieldSlice) GetStartStop(field *Field, offset int) (int, int) {
+	var (
+		start = field.Start
+		stop  = field.Stop
+	)
+	if start*offset > 0 { //皆为正或皆为负，加上修正值
+		start += offset
+	}
+	if stop*offset >= 0 { //同符号时修正
+		stop += offset
+	}
+	return start, stop
+}
+
 //直接定义并读取开头几个固定段，类似Erlang中的位匹配
 func (obj *FieldSlice) MatchFixeds(payload []byte, fieldSizes []int) [][]byte {
-	var (
-		field       *Field
-		start, stop int
-		result      [][]byte
-	)
+	var result [][]byte
 	for _, size := range fieldSizes {
-		field = obj.AddField(NewField(size, false))
-		start, stop = obj.GetFieldRange(field, len(payload), 0)
+		field := obj.AddField(NewField(size, false))
+		start, stop := obj.GetStartStop(field, 0) //一定不为负
 		result = append(result, payload[start:stop])
 	}
 	return result
